@@ -111,4 +111,151 @@ class DailySentenceTest extends TestCase
 
         $this->assertFalse($result);
     }
+
+    public function testGetSentenceWithSourceHandlesEmptyStringSource(): void
+    {
+        $service = new DailySentenceService();
+        $result = $service->getSentenceWithSource('');
+
+        $this->assertFalse($result);
+    }
+
+    public function testGetSentenceWithSourceCallsCurlInitWithCorrectUrlForItsthisforthat(): void
+    {
+        $service = $this->getMockBuilder(DailySentenceService::class)
+            ->onlyMethods(['getSentenceWithSource'])
+            ->getMock()
+        ;
+
+        $service->method('getSentenceWithSource')
+            ->will($this->returnCallback(function ($source) {
+                if ($source === 'itsthisforthat') {
+                    $ch = curl_init('https://itsthisforthat.com/api.php?text');
+                    $this->assertEquals('https://itsthisforthat.com/api.php?text', curl_getinfo($ch, CURLINFO_EFFECTIVE_URL));
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+                    return curl_exec($ch);
+                }
+                return false;
+            }))
+        ;
+
+        $service->getSentenceWithSource('itsthisforthat');
+    }
+
+    public function testGetSentenceWithSourceHandlesNullSource(): void
+    {
+        $service = new DailySentenceService();
+        $result = $service->getSentenceWithSource(null);
+
+        $this->assertFalse($result);
+    }
+
+    public function testGetSentenceWithSourceHandlesNumericSource(): void
+    {
+        $service = new DailySentenceService();
+        $result = $service->getSentenceWithSource(123);
+
+        $this->assertFalse($result);
+    }
+
+    public function testGetSentenceWithSourceHandlesSpecialCharacterSource(): void
+    {
+        $service = new DailySentenceService();
+        $result = $service->getSentenceWithSource('@#$%');
+
+        $this->assertFalse($result);
+
+    }
+
+    public function testGetSentenceWithSourceHandlesObjectSource(): void
+    {
+        $service = new DailySentenceService();
+        $result = $service->getSentenceWithSource((object) ['source' => 'metaphorpsum']);
+
+        $this->assertFalse($result);
+    }
+
+    public function testGetSentenceWithSourceHandlesArraySource(): void
+    {
+        $service = new DailySentenceService();
+        $result = $service->getSentenceWithSource(['source' => 'metaphorpsum']);
+
+        $this->assertFalse($result);
+    }
+
+    public function testGetSentenceWithSourceHandlesEmptyStringResponseForItsthisforthat(): void
+    {
+        $service = $this->getMockBuilder(DailySentenceService::class)
+            ->onlyMethods(['getSentenceWithSource'])
+            ->getMock()
+        ;
+
+        $service->method('getSentenceWithSource')
+            ->will($this->returnCallback(function ($source) {
+                if ($source === 'itsthisforthat') {
+                    $ch = curl_init('https://itsthisforthat.com/api.php?text');
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+                    return ''; // Simulate curl_exec returning an empty string
+                }
+                return false;
+            }))
+        ;
+
+        $result = $service->getSentenceWithSource('itsthisforthat');
+
+        $this->assertIsString($result);
+        $this->assertEmpty($result);
+    }
+
+    public function testGetSentenceWithSourceHandlesCurlExecFailureForItsthisforthat(): void
+    {
+        $service = $this->getMockBuilder(DailySentenceService::class)
+            ->onlyMethods(['getSentenceWithSource'])
+            ->getMock()
+        ;
+
+        $service->method('getSentenceWithSource')
+            ->will($this->returnCallback(function ($source) {
+                if ($source === 'itsthisforthat') {
+                    $ch = curl_init('https://itsthisforthat.com/api.php?text');
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+                    return false; // Simulate curl_exec failure
+                }
+                return false;
+            }))
+        ;
+
+        $result = $service->getSentenceWithSource('itsthisforthat');
+
+        $this->assertFalse($result);
+    }
+
+    public function testGetSentenceWithSourceHandlesNonEmptyStringResponseForItsthisforthat(): void
+    {
+        $service = $this->getMockBuilder(DailySentenceService::class)
+            ->onlyMethods(['getSentenceWithSource'])
+            ->getMock()
+        ;
+
+        $service->method('getSentenceWithSource')
+            ->will($this->returnCallback(function ($source) {
+                if ($source === 'itsthisforthat') {
+                    $ch = curl_init('https://itsthisforthat.com/api.php?text');
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+                    return 'This is a test sentence'; // Simulate curl_exec returning a non-empty string
+                }
+                return false;
+            }))
+        ;
+
+        $result = $service->getSentenceWithSource('itsthisforthat');
+
+        $this->assertIsString($result);
+        $this->assertNotEmpty($result);
+        $this->assertEquals('This is a test sentence', $result);
+    }
 }
